@@ -38,6 +38,6 @@ class ContainerTest extends TestCase
     #[Test]
     public function invalidGt(): void
     {
-        $this->assertNull($this->container->get(Foo::class));
+        $this->assertNull($this->container->get('HelloWorld'));
     }
 }

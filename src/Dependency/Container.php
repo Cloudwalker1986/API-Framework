@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ApiCore\Dependency;
 
+use ApiCore\Dependency\Resolver\ClassResolver;
 use ApiCore\Utils\HashMap;
 use ApiCore\Utils\Map;
 
@@ -11,9 +12,11 @@ class Container
 {
     private static ?Container $instance = null;
 
+    private ClassResolver $classResolver;
+
     private function __construct(private readonly Map $container)
     {
-
+        $this->classResolver = ClassResolver::build($this);
     }
 
     public function set(string $key, object $object): void
@@ -26,9 +29,14 @@ class Container
         if ($this->container->has($key)) {
             return $this->container->get($key);
         }
-        //@todo load here the resolver!
 
-        return null;
+        $class = $this->classResolver->resolve($key);
+
+        if ($class) {
+            $this->container->set($key, $class);
+        }
+
+        return $class;
     }
 
     public function flush(): void
