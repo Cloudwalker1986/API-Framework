@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace ApiCore\Dependency\Resolver;
 
 use ApiCore\Dependency\Container;
+use ApiCore\Utils\CollectionInterface;
+use ApiCore\Utils\UniqueCollection;
 use ReflectionClass;
 use ReflectionException;
 
@@ -14,7 +16,8 @@ class ClassResolver
     private const METHOD_SETTER = 'set';
 
     private function __construct(
-        private readonly Container $container
+        private readonly Container $container,
+        private readonly CollectionInterface $customHandlers
     ) {
     }
 
@@ -23,11 +26,11 @@ class ClassResolver
         try {
             $reflectionClass = new ReflectionClass($className);
 
-            if ($reflectionClass->hasMethod(self::METHOD_CONSTRUCT)) {
-                return $this->resolveByConstruct($reflectionClass);
-            }
+            $instance = null;
+            $instance = $this->executeCustomHandlers($instance, $reflectionClass);
 
-            return $this->hydrateBySetters($reflectionClass);
+            return $instance ?? $this->hydrateInstance($reflectionClass);
+
         } catch (ReflectionException $e) {
             //@todo add logging here
             return null;
@@ -70,7 +73,40 @@ class ClassResolver
     public static function build(Container $container): ClassResolver
     {
         return new static(
-            $container
+            $container,
+            new UniqueCollection()
+        );
+    }
+
+    /**
+     * @param object|null $instance
+     * @return object|null
+     */
+    protected function executeCustomHandlers(?object $instance, ReflectionClass $reflectionClass): ?object
+    {
+        while ($this->customHandlers->valid()) {
+            $handler = $this->customHandlers->current();
+            if ($handler->supports($instance, $reflectionClass)) {
+                $instance = $handler->handle($instance, $reflectionClass);
+            }
+            $this->customHandlers->next();
+        }
+
+        return $instance;
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    private function hydrateInstance(ReflectionClass $reflectionClass): ?object
+    {
+        if ($reflectionClass->hasMethod(self::METHOD_CONSTRUCT)) {
+            return $this->resolveByConstruct($reflectionClass);
+        }
+
+        return $this->executeCustomHandlers(
+            $this->hydrateBySetters($reflectionClass),
+            $reflectionClass
         );
     }
 }
