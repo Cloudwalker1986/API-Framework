@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace ApiCore\Dependency\Resolver;
 
+use ApiCore\Dependency\Hook;
 use ApiCore\Dependency\Container;
+use ApiCore\Dependency\Handler\HandlerInterface;
 use ApiCore\Utils\CollectionInterface;
 use ApiCore\Utils\UniqueCollection;
 use ReflectionClass;
@@ -19,6 +21,9 @@ class ClassResolver
         private readonly Container $container,
         private readonly CollectionInterface $customHandlers
     ) {
+        $this->customHandlers
+            ->add(new Hook\BeforeConstruct\Handler())
+            ->add(new Hook\AfterConstruct\Handler());
     }
 
     public function resolve(string $className): ?object
@@ -29,7 +34,10 @@ class ClassResolver
             $instance = null;
             $instance = $this->executeCustomHandlers($instance, $reflectionClass);
 
-            return $instance ?? $this->hydrateInstance($reflectionClass);
+            return $instance ?? $this->executeCustomHandlers(
+                $this->hydrateInstance($reflectionClass),
+                $reflectionClass
+            );
 
         } catch (ReflectionException $e) {
             //@todo add logging here
@@ -84,6 +92,7 @@ class ClassResolver
      */
     protected function executeCustomHandlers(?object $instance, ReflectionClass $reflectionClass): ?object
     {
+        /** @var HandlerInterface $handler */
         while ($this->customHandlers->valid()) {
             $handler = $this->customHandlers->current();
             if ($handler->supports($instance, $reflectionClass)) {
@@ -91,6 +100,8 @@ class ClassResolver
             }
             $this->customHandlers->next();
         }
+
+        $this->customHandlers->rewind();
 
         return $instance;
     }
@@ -104,9 +115,6 @@ class ClassResolver
             return $this->resolveByConstruct($reflectionClass);
         }
 
-        return $this->executeCustomHandlers(
-            $this->hydrateBySetters($reflectionClass),
-            $reflectionClass
-        );
+        return $this->hydrateBySetters($reflectionClass);
     }
 }

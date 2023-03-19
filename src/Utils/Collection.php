@@ -7,9 +7,11 @@ class Collection implements CollectionInterface
 {
     protected array $elements = [];
 
-    public function add(mixed $value): void
+    public function add(mixed $value): CollectionInterface
     {
         $this->elements[] = $value;
+
+        return $this;
     }
 
     public function current(): mixed
