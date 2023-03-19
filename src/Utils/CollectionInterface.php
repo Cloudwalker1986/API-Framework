@@ -9,7 +9,7 @@ interface CollectionInterface extends \Iterator
     /**
      * Adds the value to the collection
      * @param mixed $value
-     * @return void
+     * @return CollectionInterface
      */
-    public function add(mixed $value): void;
+    public function add(mixed $value): CollectionInterface;
 }
