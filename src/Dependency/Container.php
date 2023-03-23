@@ -24,6 +24,10 @@ class Container
         $this->container->set($key, $object);
     }
 
+    /**
+     * @param <T> $key
+     * @return <T>|object|null
+     */
     public function get(string $key): ?object
     {
         if ($this->container->has($key)) {

@@ -2,7 +2,7 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" colors="true" beStrictAboutOutputDuringTests="true" beStrictAboutTestsThatDoNotTestAnything="false" stopOnError="true" stopOnFailure="false" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd" cacheDirectory=".phpunit.cache">
   <coverage includeUncoveredFiles="true">
     <include>
-      <directory suffix="Test.php">.</directory>
+      <directory suffix=".php">./../src</directory>
     </include>
   </coverage>
   <php>

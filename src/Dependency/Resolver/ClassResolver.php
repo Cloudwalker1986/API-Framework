@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ApiCore\Dependency\Resolver;
 
+use ApiCore\Config;
 use ApiCore\Dependency\Hook;
 use ApiCore\Dependency\Container;
 use ApiCore\Dependency\Handler\HandlerInterface;
@@ -23,6 +24,7 @@ class ClassResolver
     ) {
         $this->customHandlers
             ->add(new Hook\BeforeConstruct\Handler())
+            ->add(new Config\Handler())
             ->add(new Hook\AfterConstruct\Handler());
     }
 
