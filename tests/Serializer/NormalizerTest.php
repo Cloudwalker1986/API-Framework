@@ -7,7 +7,7 @@ namespace ApiCoreTest\Serializer;
 use ApiCore\Dependency\Container;
 use ApiCore\Serializer\NormalizerInterface;
 use ApiCore\Serializer\SerializerInterface;
-use ApiCoreTest\Serializer\Example\SerializeableExample;
+use ApiCoreTest\Serializer\Example\SerializableExample;
 use JsonException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -23,7 +23,7 @@ class NormalizerTest extends TestCase
         /** @var NormalizerInterface $serializer */
         $serializer = Container::getInstance()->get(NormalizerInterface::class);
     
-        $object = new SerializeableExample();
+        $object = new SerializableExample();
         $object
             ->setAge(15)
             ->setCars(['BMW', 'AUDI', 'VW'])
@@ -55,13 +55,13 @@ class NormalizerTest extends TestCase
             'cars' => ['BMW', 'AUDI', 'VW']
         ];
 
-        $expected = new SerializeableExample();
+        $expected = new SerializableExample();
         $expected
             ->setAge(15)
             ->setCars(['BMW', 'AUDI', 'VW'])
             ->setUsername('Hello World')
             ->setCashFlow(4583.25);
 
-        $this->assertEquals($expected, $serializer->denormalize($payload, SerializeableExample::class));
+        $this->assertEquals($expected, $serializer->denormalize($payload, SerializableExample::class));
     }
 }
