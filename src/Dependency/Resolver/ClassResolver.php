@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace ApiCore\Dependency\Resolver;
 
 use ApiCore\Config;
+use ApiCore\Dependency\Attribute\InterfaceTag;
 use ApiCore\Dependency\Hook;
 use ApiCore\Dependency\Container;
 use ApiCore\Dependency\Handler\HandlerInterface;
+use ApiCore\Serializer\Handler\NormalizerHandler;
+use ApiCore\Serializer\Handler\SerializerHandler;
 use ApiCore\Utils\CollectionInterface;
 use ApiCore\Utils\UniqueCollection;
 use ReflectionClass;
@@ -16,16 +19,22 @@ use ReflectionException;
 class ClassResolver
 {
     public const METHOD_CONSTRUCT = '__construct';
-    private const METHOD_SETTER = 'set';
+    public const METHOD_SETTER = 'set';
 
     private function __construct(
         private readonly Container $container,
-        private readonly CollectionInterface $customHandlers
+        private readonly CollectionInterface $customHandlers,
+        private readonly CollectionInterface $interfaceHandlers,
+        private readonly InterfaceResolver $interfaceResolver
     ) {
         $this->customHandlers
             ->add(new Hook\BeforeConstruct\Handler())
             ->add(new Config\Handler())
             ->add(new Hook\AfterConstruct\Handler());
+
+        $this->interfaceHandlers
+            ->add(new SerializerHandler())
+            ->add(new NormalizerHandler());
     }
 
     public function resolve(string $className): ?object
@@ -34,7 +43,12 @@ class ClassResolver
             $reflectionClass = new ReflectionClass($className);
 
             $instance = null;
-            $instance = $this->executeCustomHandlers($instance, $reflectionClass);
+
+            if ($reflectionClass->isInterface()) {
+                $instance = $this->runInterfaceHandler($instance, $reflectionClass);
+            } else {
+                $instance = $this->executeCustomHandlers($instance, $reflectionClass);
+            }
 
             return $instance ?? $this->executeCustomHandlers(
                 $this->hydrateInstance($reflectionClass),
@@ -55,7 +69,18 @@ class ClassResolver
         $arguments = [];
 
         foreach ($reflectionClass->getConstructor()?->getParameters() as $parameter) {
-            $arguments[] = $this->container->get($parameter->getType()?->getName());
+
+            $name = $parameter->getType()?->getName();
+
+            if (interface_exists($name)) {
+                $resolvedName = $this->interfaceResolver->resolve($parameter);
+            } else {
+                $resolvedName = $this->container->get($name);
+            }
+
+            $arguments[$parameter->getPosition()] = is_string($resolvedName)
+                ? $this->container->get($resolvedName)
+                : $resolvedName;
         }
 
         return $reflectionClass->newInstanceArgs($arguments);
@@ -78,14 +103,6 @@ class ClassResolver
             }
         }
         return $instance;
-    }
-
-    public static function build(Container $container): ClassResolver
-    {
-        return new static(
-            $container,
-            new UniqueCollection()
-        );
     }
 
     /**
@@ -118,5 +135,30 @@ class ClassResolver
         }
 
         return $this->hydrateBySetters($reflectionClass);
+    }
+
+    private function runInterfaceHandler(?object $instance, ReflectionClass $reflectionClass): ?object
+    {
+        while ($this->interfaceHandlers->valid()) {
+            $handler = $this->interfaceHandlers->current();
+            if ($handler->supports($instance, $reflectionClass)) {
+                $instance = $handler->handle($instance, $reflectionClass);
+            }
+            $this->interfaceHandlers->next();
+        }
+
+        $this->interfaceHandlers->rewind();
+
+        return $instance;
+    }
+
+    public static function build(Container $container): ClassResolver
+    {
+        return new static(
+            $container,
+            new UniqueCollection(),
+            new UniqueCollection(),
+            new InterfaceResolver()
+        );
     }
 }
