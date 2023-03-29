@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace ApiCoreTest\Serializer\Example;
 
-class SerializeableExample
+use ApiCore\Serializer\Attribute\SerializedName;
+
+class SerializedNameWithSetterExample
 {
     private string $username;
 
@@ -19,7 +21,7 @@ class SerializeableExample
         return $this->username;
     }
 
-    public function setUsername(string $username): self
+    public function setUsername(#[SerializedName('nameOfUser')] string $username): self
     {
         $this->username = $username;
 
@@ -31,7 +33,7 @@ class SerializeableExample
         return $this->age;
     }
 
-    public function setAge(int $age): self
+    public function setAge(#[SerializedName('ageInYears')] int $age): self
     {
         $this->age = $age;
 
@@ -43,7 +45,7 @@ class SerializeableExample
         return $this->cashFlow;
     }
 
-    public function setCashFlow(float $cashFlow): self
+    public function setCashFlow(#[SerializedName('howManyMoney')] float $cashFlow): self
     {
         $this->cashFlow = $cashFlow;
 
@@ -55,7 +57,7 @@ class SerializeableExample
         return $this->cars;
     }
 
-    public function setCars(array $cars): self
+    public function setCars(#[SerializedName('carItems')] array $cars): self
     {
         $this->cars = $cars;
 
