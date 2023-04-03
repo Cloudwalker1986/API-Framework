@@ -12,6 +12,9 @@ use ApiCore\Dependency\Handler\HandlerInterface;
 use ApiCore\Serializer\Handler\NormalizerHandler;
 use ApiCore\Serializer\Handler\SerializerHandler;
 use ApiCore\Utils\CollectionInterface;
+use ApiCore\Utils\Handler\CollectionHandler;
+use ApiCore\Utils\Handler\MapHandler;
+use ApiCore\Utils\HashMap;
 use ApiCore\Utils\UniqueCollection;
 use ReflectionClass;
 use ReflectionException;
@@ -34,7 +37,9 @@ class ClassResolver
 
         $this->interfaceHandlers
             ->add(new SerializerHandler())
-            ->add(new NormalizerHandler());
+            ->add(new NormalizerHandler())
+            ->add(new MapHandler())
+            ->add(new CollectionHandler());
     }
 
     public function resolve(string $className): ?object
@@ -73,7 +78,10 @@ class ClassResolver
             $name = $parameter->getType()?->getName();
 
             if (interface_exists($name)) {
-                $resolvedName = $this->interfaceResolver->resolve($parameter);
+                $resolvedName = $this->container->get($name);
+                if ($resolvedName === null) {
+                    $resolvedName = $this->interfaceResolver->resolve($parameter);
+                }
             } else {
                 $resolvedName = $this->container->get($name);
             }

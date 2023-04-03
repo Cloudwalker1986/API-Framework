@@ -8,11 +8,11 @@ use Throwable;
 
 class NoSubscriberRegistered extends \RuntimeException
 {
-    private string $errorMsg = 'Event of "%s" has no subscriber assigned.';
+    private const ERROR_MESSAGE = 'Event of "%s" has no subscriber assigned.';
 
     public function __construct(
         string $eventName
     ) {
-        parent::__construct(sprintf($this->message, $eventName));
+        parent::__construct(sprintf(self::ERROR_MESSAGE, $eventName));
     }
 }

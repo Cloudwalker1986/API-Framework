@@ -58,6 +58,7 @@ class Container
     {
         if (self::$instance === null) {
             self::$instance = new self(new HashMap());
+            self::$instance->set(self::class, self::$instance);
         }
 
         return self::$instance;
