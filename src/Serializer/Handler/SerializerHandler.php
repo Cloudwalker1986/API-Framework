@@ -12,6 +12,10 @@ use ReflectionClass;
 
 class SerializerHandler implements HandlerInterface
 {
+    public function __construct(private readonly Container $container)
+    {
+    }
+
     public function supports(?object $instance, ReflectionClass $reflectionClass): bool
     {
         return $reflectionClass->getName() === SerializerInterface::class;
@@ -19,6 +23,6 @@ class SerializerHandler implements HandlerInterface
 
     public function handle(?object $instance, ReflectionClass $reflectionClass): ?object
     {
-        return Container::getInstance()->get(Serializer::class);
+        return $this->container->get(Serializer::class);
     }
 }
