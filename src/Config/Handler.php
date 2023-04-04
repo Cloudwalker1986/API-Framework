@@ -13,6 +13,10 @@ use ReflectionClass;
 
 class Handler implements HandlerInterface
 {
+    public function __construct(private readonly Container $container)
+    {
+    }
+
     public function supports(?object $instance, ReflectionClass $reflectionClass): bool
     {
         return !empty($reflectionClass->getAttributes(Configuration::class));
@@ -30,7 +34,7 @@ class Handler implements HandlerInterface
         $instance = $reflectionClass->newInstance();
 
         /** @var BaseConfiguration $configuration */
-        $configuration = Container::getInstance()->get(BaseConfiguration::class);
+        $configuration = $this->container->get(BaseConfiguration::class);
 
         if ($configuration === null) {
             throw new \RuntimeException('Unable to load base configuration.');

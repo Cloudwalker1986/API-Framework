@@ -9,6 +9,7 @@ use ApiCore\Dependency\Attribute\InterfaceTag;
 use ApiCore\Dependency\Hook;
 use ApiCore\Dependency\Container;
 use ApiCore\Dependency\Handler\HandlerInterface;
+use ApiCore\Logger\Handler\LoggerInterfaceHandler;
 use ApiCore\Serializer\Handler\NormalizerHandler;
 use ApiCore\Serializer\Handler\SerializerHandler;
 use ApiCore\Utils\CollectionInterface;
@@ -32,12 +33,13 @@ class ClassResolver
     ) {
         $this->customHandlers
             ->add(new Hook\BeforeConstruct\Handler())
-            ->add(new Config\Handler())
+            ->add(new Config\Handler($this->container))
             ->add(new Hook\AfterConstruct\Handler());
 
         $this->interfaceHandlers
-            ->add(new SerializerHandler())
-            ->add(new NormalizerHandler())
+            ->add(new SerializerHandler($this->container))
+            ->add(new NormalizerHandler($this->container))
+            ->add(new LoggerInterfaceHandler($this->container))
             ->add(new MapHandler())
             ->add(new CollectionHandler());
     }

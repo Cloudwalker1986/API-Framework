@@ -2,17 +2,15 @@
 
 declare(strict_types=1);
 
-namespace ApiCore\Serializer\Handler;
+namespace ApiCore\Logger\Handler;
 
 use ApiCore\Dependency\Container;
 use ApiCore\Dependency\Handler\HandlerInterface;
-use ApiCore\Serializer\Normalizer;
-use ApiCore\Serializer\NormalizerInterface;
-use ApiCore\Serializer\Serializer;
-use ApiCore\Serializer\SerializerInterface;
+use ApiCore\Logger\Logger;
+use ApiCore\Logger\LoggerInterface;
 use ReflectionClass;
 
-class NormalizerHandler implements HandlerInterface
+class LoggerInterfaceHandler implements HandlerInterface
 {
     public function __construct(private readonly Container $container)
     {
@@ -20,11 +18,11 @@ class NormalizerHandler implements HandlerInterface
 
     public function supports(?object $instance, ReflectionClass $reflectionClass): bool
     {
-        return $reflectionClass->getName() === NormalizerInterface::class;
+        return $reflectionClass->getName() === LoggerInterface::class;
     }
 
     public function handle(?object $instance, ReflectionClass $reflectionClass): ?object
     {
-        return $this->container->get(Normalizer::class);
+        return $this->container->get(Logger::class);
     }
 }
