@@ -3,6 +3,9 @@ firstLevel:
   secondSecond: 3
   secondThird:
     thirdLevel:
-     fourth:
-       - 'Hello'
-       - 'World'
+      fourth:
+        - 'Hello'
+        - 'World'
+log:
+  format: json
+  output: stdOut

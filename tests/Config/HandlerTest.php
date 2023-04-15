@@ -19,8 +19,6 @@ class HandlerTest extends TestCase
      */
     public function handle(): void
     {
-        define('APPLICATION_CONFIG', __DIR__ . DIRECTORY_SEPARATOR . 'Example' . DIRECTORY_SEPARATOR . 'config.yaml');
-
         Container::getInstance()->get(Configuration::class);
 
         /** @var ExampleConfiguration $config */

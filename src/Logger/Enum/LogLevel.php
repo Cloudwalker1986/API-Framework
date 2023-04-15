@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ApiCore\Logger\Enum;
 
-enum LogType: string
+enum LogLevel: string
 {
     case ERROR = 'error';
     case CRITICAL = 'critical';

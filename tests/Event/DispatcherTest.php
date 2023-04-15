@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ApiCoreTest\Event;
 
+use ApiCore\Config\Yaml\Configuration;
 use ApiCore\Dependency\Container;
 use ApiCore\Event\Dispatcher;
 use ApiCore\Event\Exception\NoSubscriberRegistered;
@@ -17,6 +18,8 @@ class DispatcherTest extends TestCase
     #[Test]
     public function dispatchSuccess(): void
     {
+        Container::getInstance()->get(Configuration::class);
+
         /** @var Dispatcher $dispatcher */
         $dispatcher = Container::getInstance()->get(Dispatcher::class);
 

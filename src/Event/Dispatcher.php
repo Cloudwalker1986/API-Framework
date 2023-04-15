@@ -8,6 +8,7 @@ use ApiCore\Dependency\Attribute\InterfaceTag;
 use ApiCore\Dependency\Container;
 use ApiCore\Event\Attribute\Subscribe;
 use ApiCore\Event\Exception\NoSubscriberRegistered;
+use ApiCore\Logger\LoggerInterface;
 use ApiCore\Utils\Collection;
 use ApiCore\Utils\CollectionInterface;
 use ApiCore\Utils\HashMap;
@@ -22,7 +23,8 @@ class Dispatcher
     public function __construct(
         #[InterfaceTag(HashMap::class)]
         private readonly Map $map,
-        private readonly Container $container
+        private readonly Container $container,
+        private readonly LoggerInterface $logger
     ) {
     }
 
@@ -55,14 +57,32 @@ class Dispatcher
                 $subscriberObject = $this->container->get($subscriber);
 
                 if ($subscriberObject === null) {
-                    // @todo log here
+                    $this->logger->info(
+                        sprintf(
+                            'No dispatcher were found for event %s', $eventName
+                        )
+                    );
                     continue;
                 }
-
+                $this->logger->info(
+                    sprintf(
+                        'Dispatch event %s for subscriber %s',
+                        $eventName,
+                        get_class($subscriberObject)
+                    )
+                );
                 $this->dispatchMethod($reflectionClass, $eventName, $subscriberObject, $payload);
             } catch (\Throwable $e) {
-                // @todo log here
-                // for now no handling required
+                $this->logger->warning(
+                    sprintf(
+                        'Dispatch failed for event %s and subscriber %s',
+                        $eventName,
+                        get_class($subscriberObject)
+                    ),
+                    [
+                        'exceptionMessage' => $e->getMessage()
+                    ]
+                );
                 continue;
             }
         }
