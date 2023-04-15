@@ -8,6 +8,7 @@ use ApiCore\Config\Attribute\Configuration;
 use ApiCore\Config\Attribute\Value;
 use ApiCore\Dependency\Container;
 use ApiCore\Dependency\Handler\HandlerInterface;
+use ApiCore\Dependency\Resolver\ClassResolver;
 use ReflectionAttribute;
 use ReflectionClass;
 
@@ -48,7 +49,9 @@ class Handler implements HandlerInterface
                 /** @var Value $attribute */
                 $attribute = $reflectionAttribute->newInstance();
 
-                $instance->{$method->getName()}($configuration->get($attribute->getKey()));
+                $value = $configuration->get($attribute->getKey());
+
+                $instance->{$method->getName()}($value ?? $attribute->getDefault());
             } else {
 
                 $arguments = [];
@@ -59,7 +62,10 @@ class Handler implements HandlerInterface
                     if ($reflectionAttribute) {
                         /** @var Value $attribute */
                         $attribute = $reflectionAttribute->newInstance();
-                        $arguments[] = $configuration->get($attribute->getKey());
+
+                        $value = $configuration->get($attribute->getKey());
+
+                        $arguments[] = $value ?? $attribute->getDefault();
                     }
                 }
 

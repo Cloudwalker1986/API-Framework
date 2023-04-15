@@ -12,8 +12,9 @@ use ReflectionClass;
 
 class LoggerInterfaceHandler implements HandlerInterface
 {
-    public function __construct(private readonly Container $container)
-    {
+    public function __construct(
+        private readonly Container $container
+    ) {
     }
 
     public function supports(?object $instance, ReflectionClass $reflectionClass): bool

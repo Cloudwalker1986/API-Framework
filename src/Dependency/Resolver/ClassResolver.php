@@ -10,6 +10,7 @@ use ApiCore\Dependency\Hook;
 use ApiCore\Dependency\Container;
 use ApiCore\Dependency\Handler\HandlerInterface;
 use ApiCore\Logger\Handler\LoggerInterfaceHandler;
+use ApiCore\Logger\Handler\LogWriterInterfaceHandler;
 use ApiCore\Serializer\Handler\NormalizerHandler;
 use ApiCore\Serializer\Handler\SerializerHandler;
 use ApiCore\Utils\CollectionInterface;
@@ -40,6 +41,7 @@ class ClassResolver
             ->add(new SerializerHandler($this->container))
             ->add(new NormalizerHandler($this->container))
             ->add(new LoggerInterfaceHandler($this->container))
+            ->add(new LogWriterInterfaceHandler($this->container))
             ->add(new MapHandler())
             ->add(new CollectionHandler());
     }
