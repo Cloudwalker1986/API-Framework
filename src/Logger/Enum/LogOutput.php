@@ -9,4 +9,5 @@ enum LogOutput: string
     case STDERR = 'stdErr';
     case STDOUT = 'stdOut';
     case FILE = 'file';
+    case NULL = 'nullLogger';
 }

@@ -8,4 +8,4 @@ firstLevel:
         - 'World'
 log:
   format: json
-  output: stdOut
+  output: 'nullLogger'
