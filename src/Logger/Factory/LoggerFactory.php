@@ -6,6 +6,7 @@ namespace ApiCore\Logger\Factory;
 
 use ApiCore\Logger\Config\LoggerConfig;
 use ApiCore\Logger\Enum\LogOutput;
+use ApiCore\Logger\Writer\NullLoggerWriter;
 use ApiCore\Logger\Writer\StdErrWriter;
 use ApiCore\Logger\Writer\StdOutWriter;
 use ApiCore\Logger\Writer\WriterInterface;
@@ -24,7 +25,9 @@ class LoggerFactory
             $format = $this->loggerConfig->getLogFormat();
             $this->writer = match($this->loggerConfig->getOutput()) {
                 LogOutput::STDOUT => new StdOutWriter($format),
-                LogOutput::STDERR => new StdErrWriter($format)
+                LogOutput::STDERR => new StdErrWriter($format),
+                LogOutput::NULL => new NullLoggerWriter($format),
+                default => throw new \Exception('Unexpected match value')
             };
         }
         return $this->writer;

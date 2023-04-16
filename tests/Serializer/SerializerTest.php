@@ -119,7 +119,8 @@ class SerializerTest extends TestCase
 
         $this->assertEquals($expected, $serializer->deserialize($payload, $fqcn));
     }
-    public function dataProviderDeserializeWithAlias(): array
+
+    public static function dataProviderDeserializeWithAlias(): array
     {
         return [
             'Hydrate class via setters' => [
