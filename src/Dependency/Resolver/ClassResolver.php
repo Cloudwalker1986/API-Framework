@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace ApiCore\Dependency\Resolver;
 
 use ApiCore\Config;
+use ApiCore\Database\Configuration\ConnectionConfig;
+use ApiCore\Database\Factory\AdapterFactory;
 use ApiCore\Database\Generator\ClassGenerator;
 use ApiCore\Database\Generator\MethodGenerator;
+use ApiCore\Database\Handler\AdapterInterfaceHandler;
 use ApiCore\Database\Handler\RepositoryInterfaceHandler;
+use ApiCore\Database\Handler\WriterAdapterInterfaceHandler;
 use ApiCore\Dependency\Attribute\InterfaceTag;
 use ApiCore\Dependency\Hook;
 use ApiCore\Dependency\Container;
@@ -47,7 +51,8 @@ class ClassResolver
             ->add(new LogWriterInterfaceHandler($this->container))
             ->add(new MapHandler())
             ->add(new CollectionHandler())
-            ->add(new RepositoryInterfaceHandler(new ClassGenerator(new MethodGenerator()), $this->container));
+            ->add(new RepositoryInterfaceHandler(new ClassGenerator(new MethodGenerator()), $this->container))
+            ->add(new AdapterInterfaceHandler($this->container, new AdapterFactory($this->container)));
     }
 
     public function resolve(string $className): ?object
