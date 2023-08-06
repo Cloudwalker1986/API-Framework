@@ -22,6 +22,7 @@ class RepositoryInterfaceHandlerTest extends TestCase
         $repository = Container::getInstance()->get($className);
 
         $this->assertInstanceOf($className, $repository);
+
         $this->assertContainsEquals($exactExpected, [get_class_methods($repository)]);
     }
 
@@ -30,19 +31,26 @@ class RepositoryInterfaceHandlerTest extends TestCase
         return [
             'Simple repository interface' => [
                 'className' => SimpleRepository::class,
-                'exactExpected' => ['findById', 'findAll', 'findAllBySearch']
+                'exactExpected' => ['findById', 'findAll', 'findAllBySearch', '__construct']
             ],
             'extended repository' => [
                 'className' => ExtendedRepository::class,
-                'exactExpected' => ['findById', 'findAll', 'findAllBySearch', 'findByCriteria', 'findOneByCriteriaOrNull']
+                'exactExpected' => [
+                    'findById',
+                    'findAll',
+                    'findAllBySearch',
+                    'findByCriteria',
+                    'findOneByCriteriaOrNull',
+                    '__construct'
+                ]
             ],
             'simple reader repository' => [
                 'className' => SimpleReaderRepository::class,
-                'exactExpected' => ['findByCriteria', 'findOneByCriteriaOrNull']
+                'exactExpected' => ['findByCriteria', 'findOneByCriteriaOrNull', '__construct']
             ],
             'simple crud repository' => [
                 'className' => SimpleCrudRepository::class,
-                'exactExpected' => ['persists', 'delete']
+                'exactExpected' => ['persists', 'delete', '__construct']
             ]
         ];
     }
