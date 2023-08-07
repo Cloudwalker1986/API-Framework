@@ -13,11 +13,13 @@ enum ColumnType:string
     case TINYINT = 'tinyint';
     case SMALLINT = 'smallint';
     case MEDIUMINT = 'mediumInt';
-    case ING = 'int';
+    case INT = 'int';
     case BIGINT = 'bigint';
     case DECIMAL = 'decimal';
     case ENUM = 'enum';
     case BLOB = 'blob';
+
+    case DATETIME = 'datetime';
 
     public static function getDecimal(): string
     {
