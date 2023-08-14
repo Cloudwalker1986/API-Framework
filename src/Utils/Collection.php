@@ -38,4 +38,5 @@ class Collection implements CollectionInterface
     {
         reset($this->elements);
     }
+
 }

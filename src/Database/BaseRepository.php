@@ -22,4 +22,9 @@ abstract class BaseRepository
     {
 
     }
+
+    public function getAdapter(): ReaderAdapterInterface
+    {
+        return $this->readerAdapter;
+    }
 }

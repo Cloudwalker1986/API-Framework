@@ -6,13 +6,18 @@ namespace ApiCore\Database\Hydrator;
 
 use ApiCore\Database\Attribute\Column;
 use ApiCore\Database\Attribute\Entity;
+use ApiCore\Database\Attribute\ManyToOne;
+use ApiCore\Database\Attribute\OneToMany;
+use ApiCore\Database\Attribute\OneToOne;
+use ApiCore\Database\BaseRepository;
+use ApiCore\Database\DataObject\LazyLoadingCollection;
 use ApiCore\Database\Exception\ClassNoTaggedAsEntityException;
 use ApiCore\Database\Hydrator\Exception\UnkownValueForParameterException;
 use ApiCore\Logger\LoggerInterface;
-use ApiCore\Utils\Collection;
 use ApiCore\Utils\StdClassMethod;
 use DateTimeImmutable;
 use ReflectionClass;
+use ReflectionProperty;
 
 class HydrateEntity
 {
@@ -23,8 +28,9 @@ class HydrateEntity
     /**
      * @throws \ReflectionException
      */
-    public function hydrate(string $fqcnEntity, array $dbRow): ?object
+    public function hydrate(string $fqcnEntity, array $dbRow, BaseRepository $repository): ?object
     {
+        $entity = null;
         $entityReflection = new ReflectionClass($fqcnEntity);
         $entityAttribute = $entityReflection->getAttributes(Entity::class)[0] ?? null;
 
@@ -40,27 +46,31 @@ class HydrateEntity
             return null;
         }
 
-        $normalizedData = $this->normalizeData($entityReflection, $dbRow);
+        $normalizedData = $this->normalizeData($entityReflection, $dbRow, $repository, $entity);
 
         if (StdClassMethod::hasConstructor($entityReflection)) {
-            return $this->hydrateByConstructor($entityReflection, $normalizedData);
+            $entity = $this->hydrateByConstructor($entityReflection, $normalizedData);
+        } else {
+            $entity = $entityReflection->newInstance();
+
+            $this->hydrateBySetters($entity, $entityReflection, $normalizedData);
         }
-
-
-        $entity = $entityReflection->newInstance();
-
-        $this->hydrateBySetters($entity, $entityReflection, $normalizedData);
 
         return $entity;
     }
 
-    private function normalizeData(ReflectionClass $entityReflection, array $dbRow): array
+    private function normalizeData(
+        ReflectionClass $entityReflection,
+        array $dbRow,
+        BaseRepository $repository
+    ): array
     {
         $normalizedValues = [];
         foreach ($entityReflection->getProperties() as $property) {
             $columnAttr = $property->getAttributes(Column::class)[0] ?? null;
 
             if ($columnAttr === null) {
+                $normalizedValues = $this->createLazyLoadingReference($property, $repository, $normalizedValues);
                 $this->logger->debug($property->getName() . ' is not defined as column and will be skipped.');
                 continue;
             }
@@ -124,16 +134,107 @@ class HydrateEntity
             if (StdClassMethod::isSetterMethod($reflectionMethod)) {
                 $method = $reflectionMethod->getName();
                 foreach ($reflectionMethod->getParameters() as $parameter) {
-                    if ($parameter->getType()->getName() === \DateTimeInterface::class) {
-                        $arguments[$parameter->getPosition()] = new \DateTimeImmutable($normalizedData[$parameter->getName()]);
-                    } else {
-                        $arguments[$parameter->getPosition()] = $normalizedData[$parameter->getName()];
+                    $value = $normalizedData[$parameter->getName()] ?? null;
+
+                    if (!empty($value)) {
+                        if ($parameter->getType()->getName() === \DateTimeInterface::class) {
+                            $arguments[$parameter->getPosition()] = new \DateTimeImmutable($value);
+                        } else {
+                            $arguments[$parameter->getPosition()] = $value;
+                        }
                     }
                 }
                 if (empty($arguments)) {
                     continue;
                 }
                 call_user_func_array([$instance, $method], $arguments);
+            }
+        }
+    }
+
+    private function createLazyLoadingReference(
+        ReflectionProperty $property,
+        BaseRepository $repository,
+        array $normalizedValues
+    ): array
+    {
+        foreach ($property->getAttributes() as $attr) {
+            $attribute = $attr->newInstance();
+
+            if ($attribute instanceof OneToOne) {
+                $entityAttr = $property->getDeclaringClass()->getAttributes(Entity::class)[0];
+                /** @var Entity $entity */
+                $entity = $entityAttr->newInstance();
+                $referenceKey = sprintf('fk_%s', $entity->getTableName());
+
+                $targetClass = new ReflectionClass($attribute->getTargetFqcn());
+                $targetTable = $targetClass->getAttributes(Entity::class)[0]->newInstance()->getTableName();
+
+                if ($attribute instanceof OneToMany) {
+                    $collection = new LazyLoadingCollection(
+                        function (int $limit, int $offset, int|string $parentId) use ($repository, $referenceKey, $targetTable) {
+                            return $repository->getAdapter()->fetchAll(
+                                sprintf('SELECT * FROM %s WHERE %s = :reference LIMIT :limit OFFSET :offset', $targetTable, $referenceKey),
+                                ['reference' => $parentId, 'limit' => $limit, 'offset' => $offset]
+                            );
+                        },
+                        $this,
+                        $attribute->getTargetFqcn(),
+                        new class($repository->getAdapter()) extends BaseRepository {
+                        },
+                        $attribute->getStrategy(),
+                        $normalizedValues['id']
+                    );
+                    $normalizedValues[$property->getName()] = $collection;
+                    continue;
+                }
+            } elseif ($attribute instanceof ManyToOne) {
+
+                $ds = DIRECTORY_SEPARATOR;
+
+                $path = __DIR__ . $ds . '..' . $ds . 'Generator' . $ds . 'Skeletons' . $ds;
+
+                $skeleton = file_get_contents($path . 'SingleEntity.txt');
+                $hash = substr(
+                    md5($property->getType()->getName()),
+                    0,
+                    15
+                );
+                $class = str_replace(
+                    [
+                        '__HASH__',
+                        '__PARENT__',
+                    ],
+                    [
+                        $hash,
+                        $property->getType()->getName(),
+                    ],
+                    $skeleton
+                );
+
+                $this->generateBodyForLazyLoading();
+
+                $filePath = __DIR__ . $ds . '..'  . $ds . 'Tmp' . $ds . 'Generated' . $hash . 'Entity.php';
+
+                file_put_contents($filePath, $class);
+            }
+        }
+        return $normalizedValues;
+
+    }
+
+
+    private function generateBodyForLazyLoading()
+    {
+        return new class() {
+            private function load()
+            {
+                function (int|string $parentId) use ($repository, $referenceKey, $targetTable) {
+                    return $repository->getAdapter()->fetchAll(
+                        sprintf('SELECT * FROM %s WHERE %s = :reference', $targetTable, $referenceKey),
+                        ['reference' => $parentIdt]
+                    );
+                },
             }
         }
     }
